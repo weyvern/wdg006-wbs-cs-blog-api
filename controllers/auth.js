@@ -30,18 +30,25 @@ export const registerUser = async (req, res, next) => {
 };
 
 export const loginUser = (req, res, next) => {
-  /*  
-Validate the input => maybe use a middleware with Joi [x] - Already implemented as a middleware in the route
-Check if user already exists => User.find(by email) []
-  if no exists say no => throw ErrorResponse []
-  if exists 
-    verify the password [] https://www.npmjs.com/package/bcrypt?activeTab=readme
-    if password not a match => throw ErrorResponse []
-    if password match
-      Create token jsonwebtoken https://www.npmjs.com/package/jsonwebtoken []
-      Send token => res.json() res.set() res.cookie() []
-*/
-  const token = jwt.sign({ _id: 'Sarah' }, '12345');
+   /*  
+    Validate the input => maybe use a middleware with Joi [x]
+    Check if user already exists => User.find(by email) [x]
+      if no exists say no => throw ErrorResponse [x]
+      if exists 
+        verify the password [x] https://www.npmjs.com/package/bcrypt?activeTab=readme
+        if password not a match => throw ErrorResponse [x]
+        if password match
+          Create token jsonwebtoken https://www.npmjs.com/package/jsonwebtoken [x]
+          Send token => res.json() res.set() res.cookie() [x]
+  */
+  const {
+    body: { email, password }
+  } = req;
+  const found = await User.findOne({ email }).select('+password');
+  if (!found) throw new ErrorResponse(`User doesn't exist`, 404);
+  const match = await bcrypt.compare(password, found.password);
+  if (!match) throw new ErrorResponse('Password is incorrect', 400);
+  const token = jwt.sign({ _id: found._id }, process.env.JWT_SECRET);
   res.json({ token });
 };
 
